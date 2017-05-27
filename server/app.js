@@ -21,9 +21,9 @@ app.use(bodyParser.json());
 app.use('/api', routes);
 
 // use public folder as a static folder
-app.use(express.static(path.join(__dirname,'public')));
-app.use('/bower_components', express.static(path.join(__dirname,'bower_components')));
-app.use('/node_modules', express.static(__dirname + '/node_modules'));
+app.use(express.static(path.join(__dirname,'/../client')));
+app.use('/bower_components', express.static(path.join(__dirname,'/../bower_components')));
+app.use('/node_modules', express.static(path.join(__dirname,'/../node_modules')));
 
 //setting app port
 app.set('port',3000)

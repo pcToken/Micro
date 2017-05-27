@@ -38,7 +38,7 @@ function borrarFotos(fotos){
 }
 //borrar fotos
 module.exports.borrarFotos = function(req, res){
-    Articulo.findOne({empresa:req.params.idEmpresa,_id:req.params.idArticulo}).exec(function(err, articulo){
+    Articulo.findOne({empresa:req.params.idEmpresa,codigo:req.params.idArticulo}).exec(function(err, articulo){
         if(!req.body.idFotos) res.status(400).json();
         else if(!articulo){
             res.status(404).json();
@@ -65,7 +65,7 @@ module.exports.borrarFotos = function(req, res){
 };
 //agregar fotos
 module.exports.agregarFotos = function(req, res){
-    Articulo.findOne({empresa:req.params.idEmpresa,_id:req.params.idArticulo}).exec(function(err, articulo){
+    Articulo.findOne({empresa:req.params.idEmpresa,codigo:req.params.idArticulo}).exec(function(err, articulo){
         
         if(req.files){
             var nombresFotos = funciones._splitArray(req.body.nombresFotos);
@@ -104,7 +104,7 @@ module.exports.agregarFotos = function(req, res){
 //borrar articulo
 module.exports.borrarArticulo = function(req, res){
     var idArticulo = req.params.idArticulo;
-    Articulo.findOneAndUpdate({empresa:req.params.idEmpresa,_id:idArticulo},{$set:{activo:false}},function(err,articulo){
+    Articulo.findOneAndUpdate({empresa:req.params.idEmpresa,codigo:idArticulo},{$set:{activo:false}},function(err,articulo){
         if(err){
             console.log(err);
             res.status(500).json();
@@ -194,12 +194,12 @@ module.exports.mostrarArticulos = function(req, res) {
 };
 // crear un articulo
 module.exports.crearArticulo = function(req, res) {
-    if(!req.body._id || !req.body.nombre){
-        res.status(400).json("Nombre, _id necesario");
+    if(!req.body.codigo || !req.body.nombre){
+        res.status(400).json("Nombre, codigo necesario");
         return;
     } 
     var articulo = {
-        _id: req.body._id,
+        codigo: req.body.codigo,
         nombre: req.body.nombre,
         empresa: req.params.idEmpresa
     };
@@ -234,7 +234,7 @@ module.exports.crearArticulo = function(req, res) {
     if(req.body.clasificacion) articulo.clasificacion = JSON.parse(req.body.clasificacion);
     //si tengo padre tengo que guardar este articulo en los hijos de su padre
     if(req.body.padre){
-        Articulo.findOne({_id: req.body.padre}).exec(function(err,padre){
+        Articulo.findOne({codigo: req.body.padre}).exec(function(err,padre){
             if(err){
                 console.log("padre no encontrado",err);
                 res.status(500).json();
@@ -243,12 +243,12 @@ module.exports.crearArticulo = function(req, res) {
             }
             else{
                 if(padre.hijos){
-                    padre.hijos.push(articulo._id);
+                    padre.hijos.push(articulo.codigo);
                 }
                 else{
-                    padre.hijos = [articulo._id];
+                    padre.hijos = [articulo.codigo];
                 }
-                articulo.padre = padre._id;
+                articulo.padre = padre.codigo;
                 Articulo.create(articulo,function(err, articulo){
                    if(err){
                         console.log(err);

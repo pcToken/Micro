@@ -13,7 +13,7 @@ var detalleSchema = new mongoose.Schema({
 });
 
 var articuloSchema = new mongoose.Schema({
-    _id:{
+    codigo:{
         type: String,
         required : true
     },

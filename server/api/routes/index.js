@@ -35,7 +35,7 @@ router
 
 router
     .route("/empresa/:idEmpresa")
-    .get(ctrlEmpleado.authenticate,ctrlEmpresa.mostrarEmpresa)
+    .get(ctrlEmpresa.mostrarEmpresa)
     .put(ctrlEmpleado.authenticate,ctrlEmpresa.actualizarEmpresa)
     .delete(ctrlEmpleado.authenticate,ctrlEmpresa.borrarEmpresa);
 
@@ -77,7 +77,7 @@ router
 
 router
     .route("/empresa/:idEmpresa/empleado/login")
-    .post(ctrlEmpleado.authenticate,ctrlEmpleado.login);
+    .post(ctrlEmpleado.login);
 
 router
     .route("/empresa/:idEmpresa/empleado/:idEmpleado")
