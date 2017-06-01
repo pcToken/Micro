@@ -35,7 +35,7 @@ var articuloSchema = new mongoose.Schema({
     cantidadPorPaquete : Number,
     //precio
     precio: {type:Number, required:true},
-    moneda: {type: String, enum: ['bs','sus']},
+    moneda: {type: String, enum: ['bs','usd']},
     //cantidad disponible del articulo
     stock : {type: Number, required:true},
     //id del articulo que es padre de este articulo
