@@ -312,11 +312,11 @@ module.exports.login = function(req, res) {
        if(err){
            console.log("error logging in ");
            res
-            .status(404)
+            .status(500)
             .json(err);
        }
         else if(!empleado){
-            res.status(404).json();
+            res.status(401).json();
         }
         else{
             if(bcrypt.compareSync(clave, empleado.clave)){
@@ -352,16 +352,16 @@ module.exports.login = function(req, res) {
 };
 module.exports.authenticate = function(req, res, next){
     if(req.path == '/api/empresa/UPSA/empleado/login') return next();
-    var headerExists= req.headers.authorization;
-    // the authorization token must come in the header of the request
+    var headerExists= req.headers.autorizacion;
+    //la autorizacion debe venir en el header de cada request
     if(headerExists){
-        var token = req.headers.authorization.split(' ')[1];
+        var token = req.headers.autorizacion.split(' ')[1];
         jwt.verify(token, secret.word, function(err, decoded) {
            if(err){
-               console.log("this request is not authorized");
+               console.log("Este request no esta autorizado");
                res
                 .status(401)
-                .json("Unauthorized");
+                .json("NO AUTORIZADO");
            }
             else{
                 console.log("AQUI", req.params);
@@ -372,7 +372,7 @@ module.exports.authenticate = function(req, res, next){
                 else{
                     res
                         .status(401)
-                        .json("Unauthorized");
+                        .json("NO AUTORIZADO");
                 }
                 
             }
