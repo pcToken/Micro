@@ -26,7 +26,7 @@ app.use('/bower_components', express.static(path.join(__dirname,'/../bower_compo
 app.use('/node_modules', express.static(path.join(__dirname,'/../node_modules')));
 
 //setting app port
-app.set('port',3000)
+app.set('port',(process.env.PORT || 5000))
 
 
 //listen for requests in port 3000
