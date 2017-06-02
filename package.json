@@ -4,8 +4,7 @@
   "description": "mean web app administrativa",
   "main": "server/app.js",
   "engines": {
-    "node": "6.10.2",
-    "npm": "3.10.10"
+    "node": "6.10.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
