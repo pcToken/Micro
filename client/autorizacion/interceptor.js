@@ -1,6 +1,6 @@
 angular.module('mainApp').factory("interceptorAutorizacion",interceptorAutorizacion);
 
-function interceptorAutorizacion($location, $q, $window, autorizacionData, $routeParams, jwtHelper, $rootScope){
+function interceptorAutorizacion($location, $q, $window, autorizacionData, $routeParams, jwtHelper){
     return {
         request : request,
         response: response,

@@ -7,10 +7,8 @@ function empresaData($http){
     function existe(id){
         return $http.get("/api/empresa/"+id)
             .then(function(response){
-            console.log('EMPRESA EXISTE');
             return true;
         }).catch(function(response){
-            console.log('EMPRESA NO EXISTE');
             return false;
         });
     }

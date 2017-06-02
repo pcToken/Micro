@@ -3,12 +3,11 @@ function empresaLoginCtrl($routeParams, $location, $http,autorizacionData, $wind
     var vm = this;
     vm.empresa = $routeParams.idEmpresa;
     
-    empresaData.existe(vm.empresa).then(function(existe){
-        if(!existe) $location.path("/404");
-    })
+//    empresaData.existe(vm.empresa).then(function(existe){
+//        if(!existe) $location.path("/404");
+//    })
     // funcion que llamara el form de login
     vm.ingresar = function() {
-        
         if(vm.login && vm.clave) {
             var usuario = {
                 login : vm.login,
@@ -35,7 +34,7 @@ function empresaLoginCtrl($routeParams, $location, $http,autorizacionData, $wind
         delete $window.sessionStorage.token;
         autorizacionData.tieneAutorizacion = false;
         autorizacionData.empresa = "";
-        $location.path('/'+$routeParams.idEmpresa);
+        $location.path('/'+$routeParams.idEmpresa+"/login");
     }
 
 }
