@@ -3,29 +3,33 @@ var Empresa = mongoose.model('Empresa');
 var funciones = require("./funciones.js");
 
 module.exports.crearSucursal = function(req, res){
+    if(!req.body.nombreSucursal){
+        res.status(400).json("datos faltantes");
+        return;
+    }
     var sucursal = {
       nombreSucursal:req.body.nombreSucursal,
-      ciudad:req.body.ciudad,
-      direccion:req.body.direccion,
-      georef:[req.body.long, req.body.lat],
-      telefono:req.body.telefono,
-      email:req.body.email
     };
-    
-    //guardando horarios en sucursal
-    var horario = [];
-    var dias = funciones._splitArray(req.body.dias);
-    var horarios= funciones._splitArray(req.body.horarios);
-    for(i =0;i<horarios.length;i++){
-        horario.push({dia:dias[i],horario:horarios[i]});
+    if(req.body.ciudad)sucursal.ciudad=req.body.ciudad;
+    if(req.body.direccion)sucursal.direccion=req.body.direccion;
+    if(req.body.long && req.body.lat) sucursal.georef = [req.body.long, req.body.lat];
+    if(req.body.telefono)sucursal.telefono=req.body.telefono;
+    if(req.body.email)sucursal.email=req.body.email;
+    if(req.body.dias && req.body.horarios){
+        //guardando horarios en sucursal
+        var horario = [];
+        var dias = funciones._splitArray(req.body.dias);
+        var horarios= funciones._splitArray(req.body.horarios);
+        for(i =0;i<horarios.length;i++){
+            horario.push({dia:dias[i],horario:horarios[i]});
+        }
+        sucursal.horario = horario;
     }
-    sucursal.horario = horario;
-    
     //agregar la sucursal a la empresa
     Empresa.findById(req.params.idEmpresa).exec(function(err, empresa){
         if(err) {
             console.log("error buscando empresa para agregar sucursal");
-            res.status(404).json(err);
+            res.status(500).json();
         }
         if(empresa.sucursal){
             empresa.sucursal.push(sucursal);
@@ -61,9 +65,9 @@ module.exports.mostrarSucursales = function(req, res){
         };
 
         if(err){
-            console.log("error consiguiendo surcursales de empresa " + empresaId);
+            console.log(err);
             response.status = 500;
-            response.message = err;
+            response.message = "";
         }
         else if(!empresa){
             response.status = 404;
@@ -116,9 +120,9 @@ module.exports.mostrarSucursal = function(req, res){
             };
 
             if(err){
-                console.log("error consiguiendo surcursal de empresa " + empresaId);
+                console.log(err);
                 response.status = 500;
-                response.message = err;
+                response.message = "";
             }
             else if(!empresa){
                 response.status = 404;
@@ -139,14 +143,14 @@ module.exports.actualizarSucursal = function(req, res){
         .exec(function(err, empresa) {
             var sucursal = empresa.sucursal.id(req.params.idSucursal);
             var response = {
-                status : 200,
+                status : 204,
                 message: ""
             };
 
             if(err){
-                console.log("error consiguiendo empresa " + empresaId);
+                console.log(err);
                 response.status = 500;
-                response.message = err;
+                response.message = "";
             }
             else if(!empresa){
                 response.status = 404;
@@ -160,7 +164,7 @@ module.exports.actualizarSucursal = function(req, res){
                     "message" : "sucursal no encontrada"
                     };
             }
-            if(response.status != 200){
+            if(response.status != 204){
                 res
                 .status(response.status)
                 .json(response.message);
@@ -186,10 +190,10 @@ module.exports.actualizarSucursal = function(req, res){
                 //save the updated instance
                 empresa.save(function(err, empresaActualizada) {
                     if(err){
-                        console.log("error actualizando empresa");
+                        console.log(err);
                         res
                         .status(500)
-                        .json(err);
+                        .json();
                     }
                     else{
                         console.log("sucursal actualizada = " + empresaActualizada);
@@ -209,14 +213,14 @@ module.exports.borrarSucursal = function(req, res){
         .exec(function(err, empresa) {
             var sucursal = empresa.sucursal.id(req.params.idSucursal);
             var response = {
-                status : 200,
+                status : 204,
                 message: ""
             };
 
             if(err){
-                console.log("error consiguiendo empresa " + empresaId);
+                console.log(err);
                 response.status = 500;
-                response.message = err;
+                response.message = "";
             }
             else if(!empresa){
                 response.status = 404;
@@ -230,7 +234,7 @@ module.exports.borrarSucursal = function(req, res){
                     "message" : "sucursal no encontrada"
                     };
             }
-            if(response.status != 200){
+            if(response.status != 204){
                 res
                 .status(response.status)
                 .json(response.message);
@@ -241,10 +245,10 @@ module.exports.borrarSucursal = function(req, res){
                 //save the updated instance
                 empresa.save(function(err, empresaActualizada) {
                     if(err){
-                        console.log("error actualizando empresa");
+                        console.log(err);
                         res
                         .status(500)
-                        .json(err);
+                        .json();
                     }
                     else{
                         console.log("sucursal actualizada = " + empresaActualizada);

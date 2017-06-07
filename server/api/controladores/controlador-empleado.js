@@ -7,10 +7,14 @@ var funciones =require("./funciones.js");
 
 //agregar rol
 module.exports.agregarRol = function(req, res){
+    if(!req.body.idEmpleado || !req.body.rol){
+        
+    }
     var idEmpleado = req.params.idEmpleado;
     Empleado.findOne({_id : idEmpleado}).select("-clave").exec(function(err, empleado){
         if(err){
-            res.status(404).json(err);
+            console.log(err);
+            res.status(404).json();
         }
         else{
             if (empleado){
@@ -87,7 +91,10 @@ module.exports.mostrarRoles = function(req, res) {
 }
 //crear empleado
 module.exports.crearEmpleado = function(req, res){
-    
+    if(!req.body.nombre || !req.body.cargo || !req.body.login || !req.body.clave){
+        res.status(400).json("datos faltantes");
+        return;
+    }
      var empleado = {
          _id : req.params.idEmpresa+"-"+ req.body.login,
          empresa: req.params.idEmpresa,
@@ -96,7 +103,6 @@ module.exports.crearEmpleado = function(req, res){
          login:req.body.login,
          clave: bcrypt.hashSync(req.body.clave)
      };
-    console.log("YEI");
     if(req.body.sucursal) empleado.sucursal = mongoose.Types.ObjectId(req.body.sucursal);
     if(req.body.celular) empleado.celular = req.body.celular;
     if(req.body.email) empleado.email = req.body.email;
@@ -129,9 +135,10 @@ module.exports.crearEmpleado = function(req, res){
 module.exports.mostrarEmpleados = function(req, res){
     Empleado.find({activo:true,empresa:req.params.idEmpresa}).select("-clave").exec(function(err, empleados){
         if(err){
+            console.log(err);
             res
-                .status(404)
-                .json(err);
+                .status(500)
+                .json();
         }
         else{
             //muestro solo los roles activos
@@ -151,9 +158,10 @@ module.exports.mostrarEmpleados = function(req, res){
 module.exports.mostrarEmpleadosCompleto = function(req, res){
     Empleado.find({empresa:req.params.idEmpresa}).select("-clave").exec(function(err, empleados){
         if(err){
+            console.log(err);
             res
-                .status(404)
-                .json(err);
+                .status(500)
+                .json();
         }
         else{
             res.status(200).json(empleados);
@@ -165,7 +173,8 @@ module.exports.mostrarEmpleado = function(req, res){
     var idEmpleado = req.params.idEmpleado;
     Empleado.findById(idEmpleado).select("-clave").exec(function(err, empleado){
         if(err){
-            res.status(404).json(err);
+            console.log(err);
+            res.status(500).json();
         }
         else{
             if (empleado){
@@ -175,7 +184,6 @@ module.exports.mostrarEmpleado = function(req, res){
                     if(e.activo)rolesActivos.push(e);
                 });
                 empleado.rol = rolesActivos;
-                console.log("empleado encontrado : ", empleado);
                 res.status(200).json(empleado);
             }
             else{
@@ -191,14 +199,14 @@ module.exports.actualizarEmpleado = function(req, res){
         .exec(function(err, empleado) {
         
             var response = {
-                status : 200,
+                status : 204,
                 message: empleado
             };
 
             if(err){
-                console.log("error consiguiendo empleado " + empleadoId);
+                console.log(err);
                 response.status = 500;
-                response.message = err;
+                response.message = "";
             }
             else if(!empleado){
                 response.status = 404;
@@ -206,7 +214,7 @@ module.exports.actualizarEmpleado = function(req, res){
                     "message" : "empleadoID no encontrado"
                     };
             }
-            if(response.status != 200){
+            if(response.status != 204){
                 res
                 .status(response.status)
                 .json(response.message);
@@ -268,7 +276,7 @@ module.exports.borrarEmpleado = function(req, res){
             if(err){
                 console.log("error consiguiendo empleado " + empleadoId);
                 response.status = 500;
-                response.message = err;
+                response.message = "";
             }
             else if(!empleado){
                 response.status = 404;
@@ -286,13 +294,13 @@ module.exports.borrarEmpleado = function(req, res){
                 //save the updated instance
                 empleado.save(function(err, empleadoActualizado) {
                     if(err){
-                        console.log("error borrando empleado");
+                        console.log(err);
                         res
                         .status(500)
                         .json(err);
                     }
                     else{
-                        console.log("empleado borrado = " + empleadoActualizado);
+                        console.log("empleado borrado");
                         res
                             .status(204)
                             .json();
@@ -305,18 +313,22 @@ module.exports.borrarEmpleado = function(req, res){
 //login
 module.exports.login = function(req, res) {
     console.log("login empleado");
+    if(!req.body.login || !req.body.clave){
+        res.status(400).json("faltan datos");
+        return;
+    }
     var _id = req.params.idEmpresa +"-" + req.body.login;
     var clave = req.body.clave;
     
     Empleado.findById(_id).exec(function(err, empleado) {
        if(err){
-           console.log("error logging in ");
+           console.log("error logging in ", err);
            res
             .status(500)
-            .json(err);
+            .json();
        }
         else if(!empleado){
-            res.status(401).json();
+            res.status(404).json("NOT FOUND");
         }
         else{
             if(bcrypt.compareSync(clave, empleado.clave)){
@@ -335,7 +347,6 @@ module.exports.login = function(req, res) {
                 res
                     .status(200)
                     .json({
-                    success: true,
                     token: token
                 });
                 
@@ -364,7 +375,6 @@ module.exports.authenticate = function(req, res, next){
                 .json("NO AUTORIZADO");
            }
             else{
-                console.log("AQUI", req.params);
                 if(req.params.idEmpresa && decoded.idEmpresa == req.params.idEmpresa){
                     req.empleado = decoded.login;
                     next();

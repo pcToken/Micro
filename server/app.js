@@ -29,7 +29,7 @@ app.use('/node_modules', express.static(path.join(__dirname,'/../node_modules'))
 app.set('port',(process.env.PORT || 5000))
 
 
-//listen for requests in port 3000
+//listen for requests in port
 var server = app.listen(app.get('port'), function() {
     var port  = server.address().port;
     console.log("sirviendo en puerto: " + port);

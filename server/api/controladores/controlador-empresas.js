@@ -4,14 +4,17 @@ var Cargo = mongoose.model('Cargo');
 // anadir empresas
 // se anhade el id, nombre y el gerente general
 module.exports.crearEmpresa = function(req,res){
+    if(!req.body._id || !req.body.nombre){
+        res.status(400).json("_id y nombre son obligatorios");
+    }
   var empresa = {
       _id : req.body._id,
       nombre: req.body.nombre
   };
     Empresa.create(empresa, function(err, empresa){
        if(err){
-           res.status(400).json(err);
-           console.log("error creando empresa");
+           console.log("Creando empresa",err);
+           res.status(500).json(err);
        }
         else{
             res.status(201).json();
@@ -24,7 +27,8 @@ module.exports.mostrarEmpresa= function(req,res){
     var idEmpresa = req.params.idEmpresa;
     Empresa.findById(idEmpresa).populate("gerenteGeneral").exec(function(err, empresa){
         if(err){
-            res.status(404).json(err);
+            console.log(err);
+            res.status(500).json();
         }
         else{
             if (empresa){
@@ -42,7 +46,7 @@ module.exports.mostrarEmpresas = function(req, res) {
     Empresa.find().exec(function(err, empresas){
         if(err){
             res
-                .status(404)
+                .status(500)
                 .json(err);
         }
         else{
@@ -64,9 +68,9 @@ module.exports.actualizarEmpresa = function(req, res){
             };
 
             if(err){
-                console.log("error consiguiendo empresa " + empresaId);
+                console.log(err);
                 response.status = 500;
-                response.message = err;
+                response.message = "";
             }
             else if(!empresa){
                 response.status = 404;
@@ -80,14 +84,15 @@ module.exports.actualizarEmpresa = function(req, res){
                 .json(response.message);
             }
             else{
-                empresa.nombre = req.body.nombre;
+                
+                if(req.body.nombre) empresa.nombre = req.body.nombre;
                 //save the updated instance
                 empresa.save(function(err, empresaActualizada) {
                     if(err){
-                        console.log("error actualizando empresa");
+                        console.log(err);
                         res
                         .status(500)
-                        .json(err);
+                        .json();
                     }
                     else{
                         console.log("empresa actualizada = " + empresaActualizada);
@@ -112,9 +117,9 @@ module.exports.borrarEmpresa = function(req, res){
             };
 
             if(err){
-                console.log("error consiguiendo empresa " + empresaId);
+                console.log(err);
                 response.status = 500;
-                response.message = err;
+                response.message = "";
             }
             else if(!empresa){
                 response.status = 404;
@@ -132,10 +137,10 @@ module.exports.borrarEmpresa = function(req, res){
                 //guardar
                 empresa.save(function(err, empresaBorrada) {
                     if(err){
-                        console.log("error borrando empresa");
+                        console.log(err);
                         res
                         .status(500)
-                        .json(err);
+                        .json();
                     }
                     else{
                         console.log("empresa borrada = " + empresaBorrada);

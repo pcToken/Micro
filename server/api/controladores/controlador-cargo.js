@@ -1,7 +1,24 @@
 var mongoose = require('mongoose');
 var Cargo = mongoose.model('Cargo');
 var Empresa  = mongoose.model("Empresa");
-function guardarCargo(req, res, cargo, func){
+var promise = require("bluebird");
+//guardar cargo, actualiza los datos de un cargo
+function guardarCargo(cargo){
+    return new promise(function(success, fail){
+       cargo.save(function(err, cargoActualizado) {
+                        if(err){
+                            console.log(err);
+                            fail(err);
+                        }
+                        else{
+                            console.log("cargo actualizado = " + cargoActualizado);
+                            success("actualizado");
+                        }
+                    }); 
+    });
+}
+//crea un cargo nuevo y devuelve su id
+function crearCargo(req, res, cargo, func){
     
      Cargo.create(cargo,function(err, cargo) {
         if(err){
@@ -16,6 +33,10 @@ function guardarCargo(req, res, cargo, func){
 }
 //crear un nuevo cargo para una empresa bajo un cargo o de gerente General
 module.exports.crearCargo = function(req, res) {
+    if(!req.body.esArea || !req.body.nombre){
+        res.status(400).json("esArea y nombre son necesarios");
+        return;
+    }
     var cargo= {
         esArea: req.body.esArea,
         nombre: req.body.nombre,
@@ -24,14 +45,18 @@ module.exports.crearCargo = function(req, res) {
     if(req.body.padre){
         Cargo.findById(req.body.padre).exec(function(err, cargoPadre){
             if(err){
-                res.status(400).json(err);
+                res.status(500).json();
                 console.log(err);
+            }
+            else if(!cargoPadre){
+                res.status(404).json("padre no encontrado");
+                return;
             }
             else{
                 console.log("CARGO PADRE", cargoPadre);
                 cargo.padre = cargoPadre._id;
                 var cargoId;
-                guardarCargo(req, res, cargo, function(cargoId){
+                crearCargo(req, res, cargo, function(cargoId){
                     if(cargoPadre.hijos){
                         cargoPadre.hijos.push(cargoId);    
                     }
@@ -44,6 +69,7 @@ module.exports.crearCargo = function(req, res) {
                         }
                         else{
                             console.log("padre con nuevo hijo: ", guardado);
+                            res.status(201).json();
                         }
                     });
                 });
@@ -54,18 +80,19 @@ module.exports.crearCargo = function(req, res) {
     else{
         Empresa.findById(cargo.empresa).exec(function(err, empresa){
             if(err){
-                res.status(500).json(err);
+                res.status(500).json();
                 console.log(err);
             }
             else{
-                guardarCargo(req, res, cargo, function(cargoId){
+                crearCargo(req, res, cargo, function(cargoId){
                     empresa.gerenteGeneral = cargoId;
                     empresa.save(function(err, guardada){
                         if(err){
                             res.status(500).json(err);
-                            console.log(err);
+                            console.log();
                         }
                         else{
+                            res.status(201).json();
                             console.log("gerente  general agregado: ", guardada);
                         }
                     });
@@ -85,9 +112,9 @@ module.exports.mostrarCargos = function(req, res){
             };
 
             if(err){
-                console.log("error consiguiendo cargos de empresa " + empresaId);
+                console.log(err);
                 response.status = 500;
-                response.message = err;
+                response.message = "";
             }
             else if(!cargos){
                 response.status = 404;
@@ -120,7 +147,7 @@ module.exports.mostrarCargosCompleto = function(req, res){
             if(err){
                 console.log("error consiguiendo cargos de empresa " + empresaId);
                 response.status = 500;
-                response.message = err;
+                response.message = "";
             }
             else if(!cargos){
                 response.status = 404;
@@ -150,9 +177,9 @@ module.exports.mostrarCargo = function(req, res){
             };
 
             if(err){
-                console.log("error consiguiendo cargo de empresa " + empresaId);
+                console.log(err);
                 response.status = 500;
-                response.message = err;
+                response.message ="";
             }
             else if(!cargo){
                 response.status = 404;
@@ -174,20 +201,19 @@ module.exports.mostrarCargo = function(req, res){
         }); 
 };
 //actualizar cargo en especifico
-module.exports.actualizarCargo = function(req, res){
+module.exports.actualizarCargo = function(req, res, next){
      Cargo.findById(req.params.idCargo)
         .select("-hijos")
         .exec(function(err, cargo) {
-        
             var response = {
-                status : 200,
+                status : 204,
                 message: cargo
             };
 
             if(err){
-                console.log("error consiguiendo cargo " + empresaId);
+                console.log(err);
                 response.status = 500;
-                response.message = err;
+                response.message = "";
             }
             else if(!cargo){
                 response.status = 404;
@@ -195,7 +221,7 @@ module.exports.actualizarCargo = function(req, res){
                     "message" : "cargoID no encontrado"
                     };
             }
-            if(response.status != 200){
+            if(response.status != 204){
                 res
                 .status(response.status)
                 .json(response.message);
@@ -203,64 +229,87 @@ module.exports.actualizarCargo = function(req, res){
             else{
                 if(req.body.nombre) cargo.nombre = req.body.nombre;
                 if(req.body.esArea) cargo.esArea = req.body.esArea;
-                if(req.body.empresa) cargo.empresa = req.body.empresa;
                 if(req.body.activo) cargo.activo = req.body.activo;
                 if(req.body.padre) 
                 {    //cambiando en hijos del padre viejo
-                    // creo nuevo array sin el hijo y lo asigno
+                    // creo nuevo array sin el hijo
                     Cargo.findById(cargo.padre).exec(function(err, padre){
-                        var hijos = [];
-                        for(var index = 0, len = padre.hijos.length; index<len; index ++){
-                            if(!padre.hijos[index]._id.equals( cargo._id)){
-                                hijos.push(padre.hijos[index]._id);
+                        if(padre){
+                            var hijos = [];
+                            for(var index = 0, len = padre.hijos.length; index<len; index ++){
+                                if(!padre.hijos[index]._id.equals( cargo._id)){
+                                    hijos.push(padre.hijos[index]._id);
+                                }
                             }
+                            padre.hijos = hijos;
+                            guardarCargo(padre).then(function(success){
+                                console.log("padre viejo acualizado");
+                            }).catch(function(err){
+                                console.log(err);
+                            })
                         }
-                        padre.hijos = hijos;
-                        padre.save(function(err, padre){
-                            console.log("Removido de padre viejo: ", padre);
-                        });
                     });
-                    cargo.padre = req.body.padre;
-                }
-                //guardando cargo actualizado y guardandolo en su nuevo padre
-                cargo.save(function(err, cargoActualizado) {
-                    if(err){
-                        console.log("error actualizando cargo");
-                        res
-                        .status(500)
-                        .json(err);
+                    if(req.body.padre == "none"){
+                        cargo.padre = null;
+                        guardarCargo(cargo).then(function(response){
+                            res.status(204).json();
+                        }).catch(function(err){
+                            console.log(err);
+                            res.status(500).json();
+                            return;
+                        })
                     }
                     else{
-                        console.log("cargo actualizado = " + cargoActualizado);
-                        if(req.body.padre) {
-                            //cambiando en hijos del padre
-                            Cargo.findById(req.body.padre).exec(function(err, padre){
-                                if(err){
-                                    response.status= 500;
-                                    response.message = err
-                                }
-                                if(padre.hijos){
-                                    padre.hijos.push(cargoActualizado._id);
-                                }
-                                else{
-                                    padre.hijos= [cargoActualizado._id];
-                                }
-                                padre.save(function(err, padreGuardado){
-                                    if(err){
-                                        response.status= 500;
-                                        response.message = err
-                                    }
-                                    else{
-                                        console.log("nuevo padre", padreGuardado);
-                                    }
-                                })
-                            });
-                        }
-                        res
-                            .status(204)
-                            .json();
+                        //revisando que exista padre y solo ahi guardando
+                        cargo.padre = req.body.padre;
+                        Cargo.findById(req.body.padre).exec(function(err, padreNuevo){
+                           if(err){
+                               console.log(err);
+                               res.status(500).json();
+                           }
+                            if(!padreNuevo){
+                                res.status(400).json("padre nuevo no existente");
+                                return;
+                            }
+                            else{
+                                if(!padreNuevo.hijos) padreNuevo.hijos = [];
+                                padreNuevo.hijos.push(cargo._id);
+                                guardarCargo(padreNuevo).then(function(success){
+                                    console.log("nuevo padre");
+                                    guardarCargo(cargo)
+                                        .then(function(success){
+                                        res
+                                            .status(204)
+                                            .json();
+                                    })
+                                        .catch(function(err){
+                                        console.log(err);
+                                        throw(err);
+                                    });
+                                }).catch(function(err){
+                                    console.log(err);
+                                    res.status(500).json();
+                                });
+                            }
+                        });
                     }
-                });
+                }
+                //guardando cargo actualizado y guardandolo en su nuevo padre
+                else{
+                    guardarCargo(cargo)
+                        .then(function(success){
+                            res
+                                .status(204)
+                                .json();
+                        })
+                        .catch(function(err){
+                            console.log(err);
+                            res
+                            .status(500)
+                            .json();
+                        });
+                }
+                
             }
 
         });
@@ -275,7 +324,7 @@ module.exports.borrarCargo = function(req, res){
             return; 
         }
         else if(!cargo){
-            res.status(400).json({message: " NO ENCONTRADO "});
+            res.status(404).json({message: " NO ENCONTRADO "});
             return;
         }
         var tieneHijoActivo = false;
@@ -285,26 +334,27 @@ module.exports.borrarCargo = function(req, res){
             tieneHijoActivo= (cargo.hijos[i].activo)? true: cargo.hijos[i].activo;
         }
         var response = {
-            status : 200,
+            status : 202,
             message: ""
         };
         
         if(tieneHijoActivo){
             response.status = 400;
             response.message = "Error: cargo tiene hijos";
+            res.status(response.status).json(response.message);
         }
         else{
             cargo.activo = false;
             cargo.save(function(err, cargo){
                  if(err){
+                     console.log(err);
                    res.status(500).json({message: " ERROR SERVIDOR "});
                     return; 
                 }
                 response.status = 202;
                 response.message = cargo;
+                res.status(response.status).json(response.message);
             });
         }
-        res.status(response.status).json(response.message);
-            
     });
 };

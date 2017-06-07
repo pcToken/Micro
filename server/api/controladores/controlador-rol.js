@@ -2,16 +2,20 @@ var mongoose = require("mongoose");
 var Rol = mongoose.model("Rol");
 //crear rol
 module.exports.crearRol = function(req, res){
+    if(!req.body.nombre){
+        res.status(400).json("nombre de rol necesario");
+    }
     var rol = {
         nombre : req.body.nombre,
         empresa: req.params.idEmpresa
     };
     Rol.create(rol,function(err, rol){
         var response= {
-            status : 200,
+            status : 201,
             message : ""
         }
         if (err){
+            console.log(err);
             response.status = 500;
             response.message = " Server Error ";
         }
@@ -69,8 +73,8 @@ module.exports.borrarRol = function(req, res) {
     var idEmpresa = req.params.idEmpresa;
     Rol.findOne({_id:idRol,empresa:idEmpresa}).exec(function(err, rol){
         var response= {
-            status : 200,
-            message : rol
+            status : 204,
+            message : ""
         };
         if (err){
             response.status = 500;
@@ -94,7 +98,7 @@ module.exports.borrarRol = function(req, res) {
                 return;
             });
         }
-        if(response.status != 200)res.status(response.status).json(response.message);
+        if(response.status != 204)res.status(response.status).json(response.message);
     });
 }
 //mostrar rol
